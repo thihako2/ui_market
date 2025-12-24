@@ -1,244 +1,290 @@
-# UI Market CLI
+# Flutter UI Marketplace & CLI 📦
 
-A command-line tool for browsing, installing, and uploading Flutter UI packs from the Flutter UI Marketplace.
+A comprehensive ecosystem for sharing, discovering, and installing production-ready Flutter UI components.
 
-## Features
+[![pub package](https://img.shields.io/pub/v/ui_market.svg)](https://pub.dev/packages/ui_market)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- 🔍 **Search** - Browse and search UI packs from the marketplace
-- 📦 **Install** - Add UI packs to your Flutter project with one command
-- 🗑️ **Remove** - Clean removal of installed packs
-- 🔄 **Build** - Regenerate routes after changes
-- ⬆️ **Upload** - Publish your UI packs to the marketplace
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Usage Guide](#usage-guide)
+  - [Initialization](#initialization)
+  - [Browsing & Searching](#browsing--searching)
+  - [Installing Packs](#installing-packs)
+  - [Using Components](#using-components)
+- [Pack Development Guide](#pack-development-guide)
+  - [Anatomy of a Pack](#anatomy-of-a-pack)
+  - [Coding Guidelines & Constraints](#coding-guidelines--constraints)
+  - [The Manifest File](#the-manifest-file)
+- [Publishing Guide](#publishing-guide)
+  - [Preparation](#preparation)
+  - [Uploading](#uploading)
+- [Architecture & Self-Hosting](#architecture--self-hosting)
+
+---
+
+## Introduction
+
+**ui_market** solves the problem of "copy-pasting" UI code between projects. Instead of maintaining a snippets library or rewriting common screens, you can:
+
+1.  **Package** your UI (Screens, Components, Themes) into a "Pack".
+2.  **Upload** it to the shared registry.
+3.  **Install** it into any project with a single command.
+
+Unlike traditional packages, `ui_market` installs **source code** directly into your project, giving you full ownership and the ability to modify the UI to fit your needs.
+
+---
 
 ## Installation
 
-Add to your `pubspec.yaml`:
-
-```yaml
-dev_dependencies:
-  ui_market: ^1.0.0
-```
-
-Or install globally:
+You can install the CLI globally to use it anywhere on your machine.
 
 ```bash
 dart pub global activate ui_market
 ```
 
-## Quick Start
-
-### 1. Initialize your project
+Once installed, verify it's working:
 
 ```bash
-dart run ui_market init
+ui_market --version
+```
+
+---
+
+## Usage Guide
+
+### Initialization
+
+Before using `ui_market` in a Flutter project, you need to initialize it. This sets up the configuration file and directory structure.
+
+```bash
+cd my_flutter_app
+ui_market init
 ```
 
 This creates:
-```
-lib/ui/
-├── screens/
-├── components/
-├── theme/
-└── generated/
-    └── ui_routes.g.dart
-ui_market.yaml
+- `ui_market.yaml`: Configuration file (defines registry URL, output paths).
+- `lib/ui/`: The default directory where installed packs will live.
+
+### Browsing & Searching
+
+You don't need to leave your terminal to find components.
+
+**List all available packs:**
+```bash
+ui_market search --all
 ```
 
-### 2. Search for UI packs
+**Search by keyword:**
+```bash
+# Search for onboarding screens
+ui_market search onboarding
+
+# Search for authentication related packs
+ui_market search login
+```
+
+**Search by tag:**
+```bash
+ui_market search --tag modern
+```
+
+### Installing Packs
+
+When you find a pack you like, install it by its ID.
 
 ```bash
-dart run ui_market search onboarding
+ui_market add onboarding_pack
 ```
 
-### 3. Install a pack
+**What happens during installation?**
+1.  **Fetch**: Downloads the pack bundle from the registry.
+2.  **Validate**: Checks the code for security and compatibility.
+3.  **Install**: Copies files to `lib/ui/<pack_id>/`.
+4.  **Dependencies**: Automatically adds required packages (e.g., `google_fonts`, `flutter_svg`) to your `pubspec.yaml`.
+5.  **Routes**: Generates a `ui_routes.g.dart` file for easy navigation.
 
-```bash
-dart run ui_market add onboarding_pack
-```
+### Using Components
 
-### 4. Use in your app
+After installation, you can use the screens immediately using the generated routes.
+
+#### 1. Import Routes
+
+In your `main.dart` or wherever you define your `MaterialApp`:
 
 ```dart
 import 'package:your_app/ui/generated/ui_routes.g.dart';
+```
 
+#### 2. Register Routes
+
+Connect the generated routes to your app:
+
+```dart
 MaterialApp(
+  title: 'My App',
+  // Register all installed UI routes
   routes: UIRoutes.routes,
+  // Optional: Handle dynamic routing if supported
   onGenerateRoute: UIRoutes.onGenerateRoute,
 );
 ```
 
-## Commands
+#### 3. Navigate
 
-### `init`
+Navigate to the installed screens using their predefined route names:
 
-Initialize ui_market in a Flutter project.
-
-```bash
-dart run ui_market init [--registry <url>] [--output-dir <path>]
+```dart
+// Navigate to the onboarding welcome screen
+Navigator.pushNamed(context, UIRoutes.welcome);
 ```
 
-Options:
-- `--registry, -r` - Custom registry URL
-- `--output-dir, -o` - Output directory for UI files (default: `lib/ui`)
+You can also inspect `lib/ui/generated/ui_routes.g.dart` to see all available route constants.
 
-### `search`
+---
 
-Search for UI packs in the marketplace.
+## Pack Development Guide
 
-```bash
-dart run ui_market search <keyword>
-dart run ui_market search --tag <tag>
-dart run ui_market search --all
-```
+Want to contribute? Creating a pack is straightforward.
 
-### `add`
+### Anatomy of a Pack
 
-Install a UI pack.
-
-```bash
-dart run ui_market add <pack_id> [--version <version>] [--dry-run]
-```
-
-Options:
-- `--version, -v` - Specific version to install
-- `--skip-validation` - Skip code validation (not recommended)
-- `--dry-run` - Preview what would be installed
-
-### `remove`
-
-Remove an installed pack.
-
-```bash
-dart run ui_market remove <pack_id> [--force] [--keep-files]
-```
-
-Options:
-- `--force, -f` - Skip confirmation
-- `--keep-files` - Keep files but remove from tracking
-
-### `build`
-
-Regenerate routes from installed packs.
-
-```bash
-dart run ui_market build [--verbose]
-```
-
-### `upload`
-
-Upload a UI pack to the marketplace.
-
-```bash
-dart run ui_market upload [path] [--pr] [--dry-run]
-```
-
-Options:
-- `--pr` - Create a pull request instead of direct publish
-- `--dry-run` - Validate only, don't upload
-- `--skip-format` - Skip dart format check
-- `--token` - GitHub token (or use `GITHUB_TOKEN` env var)
-
-## Creating UI Packs
-
-### Pack Structure
+A clean pack structure is essential. Here is the recommended layout:
 
 ```
-my_pack/
-├── screens/
-│   └── my_screen.dart
-├── components/
-│   └── my_widget.dart
-├── theme/
-│   └── my_theme.dart
-├── assets/
+my_awesome_pack/
+├── ui_manifest.json          # Metadata (REQUIRED)
+├── screens/                  # Screen widgets (REQUIRED)
+│   ├── login_screen.dart
+│   └── signup_screen.dart
+├── components/               # Reusable widgets
+│   ├── custom_button.dart
+│   └── social_icon.dart
+├── theme/                    # Theme definitions
+│   └── app_theme.dart
+├── assets/                   # Static assets (images, icons)
 │   └── images/
-├── previews/
-│   ├── preview_1.png
-│   └── preview_2.png
-└── ui_manifest.json
+│       └── logo.png
+└── previews/                 # Preview images for the marketplace
+    └── screen1.png
 ```
 
-### ui_manifest.json
+### Coding Guidelines & Constraints
+
+To ensure packs are universally compatible and secure, we enforce strict validation rules:
+
+✅ **ALLOWED**:
+- `StatelessWidget`: For pure UI components.
+- `StatefulWidget`: Use sparingly, only for ephemeral UI state (animations, text input).
+- Relative imports: `import '../components/button.dart';`
+- Flutter SDK imports: `import 'package:flutter/material.dart';`
+- Allowed 3rd party packages: `google_fonts`, `flutter_svg`, `intl`, `lucide_icons`.
+
+❌ **FORBIDDEN (Strict Validation)**:
+- **Networking**: No `http`, `dio`, or direct API calls. UI packs must be pure UI.
+- **State Management**: No `bloc`, `provider`, `riverpod` logic inside the UI. State should be lifted out by the consumer.
+- **File System**: No `dart:io` access.
+- **Platform Channels**: No native code integration.
+- **Absolute Paths**: No imports from your local project structure.
+
+### The Manifest File
+
+The `ui_manifest.json` is the heart of your pack. It tells the registry what your pack is.
 
 ```json
 {
-  "id": "my_pack",
-  "name": "My UI Pack",
-  "version": "1.0.0",
-  "description": "Description of your pack",
-  "author": "Your Name",
-  "authorUrl": "https://github.com/yourname",
+  "id": "modern_login_v1",                 // Unique ID (lowercase, underscores)
+  "name": "Modern Login V1",               // Display name
+  "version": "1.0.0",                      // Semantic version
+  "description": "Clean login screen with social auth buttons",
+  "author": "PixelPerfect",
+  "authorUrl": "https://github.com/pixelperfect",
   "license": "MIT",
-  "flutter": ">=3.10.0 <4.0.0",
+  "flutter": ">=3.10.0 <4.0.0",            // Supported Flutter versions
+  "tags": ["login", "auth", "modern", "clean"],
+  
+  // List of screens to expose as routes
   "screens": [
     {
-      "name": "MyScreen",
-      "route": "/my-screen",
-      "file": "screens/my_screen.dart"
+      "name": "LoginScreen",               // Class name
+      "route": "/login",                   // Default route path
+      "file": "screens/login_screen.dart", // File path relative to pack root
+      "description": "Main login screen"
     }
   ],
-  "dependencies": {},
-  "assets": [],
-  "tags": ["tag1", "tag2"]
+  
+  // 3rd party dependencies this pack needs
+  "dependencies": {
+    "google_fonts": "^6.1.0",
+    "flutter_svg": "^2.0.0"
+  },
+  
+  // Hosted preview images (URLs)
+  "previews": [
+    "https://example.com/previews/login_v1.png"
+  ]
 }
 ```
 
-### UI Code Rules
+---
 
-Your code must follow these rules:
+## Publishing Guide
 
-✅ **Allowed:**
-- `StatelessWidget` only
-- Relative imports
-- `package:flutter/*` imports
-- Approved packages (flutter_svg, google_fonts, etc.)
+Ready to share your work with the community?
 
-❌ **Not Allowed:**
-- `StatefulWidget` / `setState`
-- State management (provider, bloc, riverpod, etc.)
-- Networking (http, dio, etc.)
-- Database / Storage
-- `dart:io` or platform channels
+### Preparation
 
-### Upload
+1.  **Format your code**:
+    ```bash
+    dart format .
+    ```
+2.  **Verify structure**: Ensure `ui_manifest.json` is valid.
+3.  **Validate locally**: Use the CLI to check for errors before uploading.
+    ```bash
+    ui_market upload ./my_pack --dry-run
+    ```
+
+### Uploading
+
+We use a **Shared Community Registry**, so you don't need to configure your own servers or tokens.
+
+**Command:**
+```bash
+ui_market upload ./my_pack
+```
+
+**That's it!** failed validation will be rejected. If successful:
+
+1.  The CLI bundles your files into a zip.
+2.  It uploads the bundle to the community GitHub Repository as a Release.
+3.  It updates the Registry Index so everyone can see it immediately.
+
+---
+
+## Architecture & Self-Hosting
+
+`ui_market` is decentralized by design.
+
+- **Registry**: A simple GitHub repository containing an `index.json` and Release assets.
+- **Marketplace App**: A Flutter web app that reads the `index.json` to display a nice UI.
+- **CLI**: The tool that interacts with the registry.
+
+**Want your own private registry?**
+
+1.  **Fork** the [ui_registry](https://github.com/thihasithuleon369kk-rgb/ui_registry).
+2.  **Edit** your project's `ui_market.yaml`:
+    ```yaml
+    registry: https://github.com/YOUR_ORG/your_private_registry
+    ```
+3.  **Configure** your CLI to upload to this new repo (requires a GitHub Token).
 
 ```bash
-# Validate first
-dart run ui_market upload ./my_pack --dry-run
-
-# Upload with GitHub token
-export GITHUB_TOKEN=ghp_yourtoken
-dart run ui_market upload ./my_pack
-
-# Or via PR
-dart run ui_market upload ./my_pack --pr
+export GITHUB_TOKEN=your_private_token
+ui_market upload ./pack
 ```
 
-## Configuration
+---
 
-### ui_market.yaml
-
-```yaml
-registry: https://github.com/your-org/flutter-ui-registry
-output_dir: lib/ui
-routes_file: lib/ui/generated/ui_routes.g.dart
-
-installed_packs:
-  onboarding_pack:
-    version: "1.0.0"
-    installed_at: "2025-01-15T10:00:00Z"
-    files:
-      - "lib/ui/onboarding_pack/screens/welcome_screen.dart"
-```
-
-## Self-Hosting
-
-You can fork and run your own registry:
-
-1. Fork `flutter-ui-registry` repository
-2. Update `registry` URL in your projects' `ui_market.yaml`
-3. Upload packs to your fork
-
-## License
-
-MIT
+Made with ❤️ by the Flutter Community.

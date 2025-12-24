@@ -1,6 +1,6 @@
 name: ui_market
 description: A CLI tool for browsing, installing, and uploading Flutter UI packs from the Flutter UI Marketplace.
-version: 1.0.0
+version: 1.0.2
 homepage: https://github.com/thihasithuleon369kk-rgb/ui_market
 repository: https://github.com/thihasithuleon369kk-rgb/ui_market
 issue_tracker: https://github.com/thihasithuleon369kk-rgb/ui_market/issues

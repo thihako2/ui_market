@@ -1,0 +1,43 @@
+{
+    "id": "onboarding_pack",
+    "name": "Modern Onboarding Pack",
+    "version": "1.0.0",
+    "description": "Beautiful onboarding screens with smooth page transitions and modern design",
+    "author": "UI Marketplace Team",
+    "authorUrl": "https://github.com/your-org",
+    "license": "MIT",
+    "flutter": ">=3.10.0 <4.0.0",
+    "screens": [
+        {
+            "name": "WelcomeScreen",
+            "route": "/welcome",
+            "file": "screens/welcome_screen.dart",
+            "description": "Initial welcome screen with app branding"
+        },
+        {
+            "name": "FeaturesScreen",
+            "route": "/features",
+            "file": "screens/features_screen.dart",
+            "description": "Feature highlight carousel"
+        },
+        {
+            "name": "GetStartedScreen",
+            "route": "/get-started",
+            "file": "screens/get_started_screen.dart",
+            "description": "Final call-to-action screen"
+        }
+    ],
+    "dependencies": {
+        "smooth_page_indicator": "^1.1.0"
+    },
+    "assets": [
+        "assets/images/"
+    ],
+    "tags": [
+        "onboarding",
+        "welcome",
+        "intro",
+        "modern",
+        "animated"
+    ]
+}

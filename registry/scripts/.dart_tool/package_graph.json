@@ -1,0 +1,21 @@
+{
+  "roots": [
+    "registry_scripts"
+  ],
+  "packages": [
+    {
+      "name": "registry_scripts",
+      "version": "1.0.0",
+      "dependencies": [
+        "path"
+      ],
+      "devDependencies": []
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    }
+  ],
+  "configVersion": 1
+}

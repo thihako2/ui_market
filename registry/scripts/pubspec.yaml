@@ -8,3 +8,5 @@ environment:
 
 dependencies:
   path: ^1.9.0
+  http: ^1.1.0
+  archive: ^3.3.7

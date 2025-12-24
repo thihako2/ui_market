@@ -80,22 +80,19 @@ class RegistryPack {
       license: json['license'] as String,
       tags:
           (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-          [],
+              [],
       downloads: json['downloads'] as int? ?? 0,
       downloadUrl: json['downloadUrl'] as String,
-      previews:
-          (json['previews'] as List<dynamic>?)
+      previews: (json['previews'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
-      screens:
-          (json['screens'] as List<dynamic>?)
+      screens: (json['screens'] as List<dynamic>?)
               ?.map((e) => ScreenInfo.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       flutter: json['flutter'] as String? ?? '>=3.0.0',
-      dependencies:
-          (json['dependencies'] as Map<String, dynamic>?)?.map(
+      dependencies: (json['dependencies'] as Map<String, dynamic>?)?.map(
             (k, v) => MapEntry(k, v as String),
           ) ??
           {},

@@ -1,0 +1,11 @@
+# Exclude example packs (they are Flutter code, conflicts with Dart CLI)
+example_packs/
+marketplace/
+test_ui_market_app/
+registry/
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+*.iml

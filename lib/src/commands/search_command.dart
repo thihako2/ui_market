@@ -27,9 +27,8 @@ class SearchCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    final keyword = argResults!.rest.isNotEmpty
-        ? argResults!.rest.join(' ')
-        : null;
+    final keyword =
+        argResults!.rest.isNotEmpty ? argResults!.rest.join(' ') : null;
     final tag = argResults!['tag'] as String?;
     final showAll = argResults!['all'] as bool;
 
@@ -49,8 +48,8 @@ class SearchCommand extends Command<int> {
       final packs = showAll
           ? await client.listPacks()
           : tag != null
-          ? await client.listByTag(tag)
-          : await client.search(keyword!);
+              ? await client.listByTag(tag)
+              : await client.search(keyword!);
 
       if (packs.isEmpty) {
         Logger.warning('No packs found.');

@@ -7,20 +7,21 @@ import 'package:ui_market/src/commands/add_command.dart';
 import 'package:ui_market/src/commands/remove_command.dart';
 import 'package:ui_market/src/commands/build_command.dart';
 import 'package:ui_market/src/commands/upload_command.dart';
+import 'package:ui_market/src/commands/login_command.dart';
 import 'package:ui_market/src/core/logger.dart';
 
 void main(List<String> arguments) async {
-  final runner =
-      CommandRunner<int>(
-          'ui_market',
-          'Flutter UI Marketplace CLI - Browse, install, and upload UI packs.',
-        )
-        ..addCommand(InitCommand())
-        ..addCommand(SearchCommand())
-        ..addCommand(AddCommand())
-        ..addCommand(RemoveCommand())
-        ..addCommand(BuildCommand())
-        ..addCommand(UploadCommand());
+  final runner = CommandRunner<int>(
+    'ui_market',
+    'Flutter UI Marketplace CLI - Browse, install, and upload UI packs.',
+  )
+    ..addCommand(InitCommand())
+    ..addCommand(SearchCommand())
+    ..addCommand(AddCommand())
+    ..addCommand(RemoveCommand())
+    ..addCommand(BuildCommand())
+    ..addCommand(UploadCommand())
+    ..addCommand(LoginCommand());
 
   try {
     final result = await runner.run(arguments);

@@ -11,13 +11,13 @@ class RegistryClient {
   final String registryUrl;
   final http.Client _httpClient;
 
-  /// Default registry URL.
+  /// Default registry URL (shared community registry).
   static const defaultRegistry =
-      'https://github.com/your-org/flutter-ui-registry';
+      'https://github.com/thihasithuleon369kk-rgb/ui_registry.git';
 
   RegistryClient({String? registryUrl, http.Client? httpClient})
-    : registryUrl = registryUrl ?? defaultRegistry,
-      _httpClient = httpClient ?? http.Client();
+      : registryUrl = registryUrl ?? defaultRegistry,
+        _httpClient = httpClient ?? http.Client();
 
   /// Get the raw GitHub URL for registry files.
   String get _rawBaseUrl {
@@ -26,7 +26,12 @@ class RegistryClient {
     if (uri.host == 'github.com') {
       final pathParts = uri.pathSegments;
       if (pathParts.length >= 2) {
-        return 'https://raw.githubusercontent.com/${pathParts[0]}/${pathParts[1]}/main';
+        // Strip .git suffix if present
+        var repoName = pathParts[1];
+        if (repoName.endsWith('.git')) {
+          repoName = repoName.substring(0, repoName.length - 4);
+        }
+        return 'https://raw.githubusercontent.com/${pathParts[0]}/$repoName/main';
       }
     }
     return '$registryUrl/raw/main';

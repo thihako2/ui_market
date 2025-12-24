@@ -135,7 +135,6 @@ dart run ui_market upload [path] [--pr] [--dry-run]
 Options:
 - `--pr` - Create a pull request instead of direct publish
 - `--dry-run` - Validate only, don't upload
-- `--skip-analyze` - Skip flutter analyze step
 - `--skip-format` - Skip dart format check
 - `--token` - GitHub token (or use `GITHUB_TOKEN` env var)
 

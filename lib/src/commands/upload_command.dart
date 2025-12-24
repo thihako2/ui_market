@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../core/exceptions.dart';
 import '../core/file_manager.dart';
 import '../core/logger.dart';
+import '../core/token_manager.dart';
 import '../models/config.dart';
 import '../models/ui_manifest.dart';
 import '../registry/github_release_client.dart';
@@ -38,11 +39,7 @@ class UploadCommand extends Command<int> {
       help: 'Validate only, do not upload',
       negatable: false,
     );
-    argParser.addFlag(
-      'skip-analyze',
-      help: 'Skip flutter analyze step',
-      negatable: false,
-    );
+
     argParser.addFlag(
       'skip-format',
       help: 'Skip dart format check',
@@ -51,6 +48,11 @@ class UploadCommand extends Command<int> {
     argParser.addOption(
       'token',
       help: 'GitHub token (or use GITHUB_TOKEN env var)',
+    );
+    argParser.addOption(
+      'registry',
+      abbr: 'r',
+      help: 'Target GitHub repository URL for the registry',
     );
   }
 
@@ -62,17 +64,21 @@ class UploadCommand extends Command<int> {
 
     final usePR = argResults!['pr'] as bool;
     final dryRun = argResults!['dry-run'] as bool;
-    final skipAnalyze = argResults!['skip-analyze'] as bool;
     final skipFormat = argResults!['skip-format'] as bool;
     final tokenArg = argResults!['token'] as String?;
+    final registryArg = argResults!['registry'] as String?;
 
-    final token = tokenArg ?? Platform.environment['GITHUB_TOKEN'];
+    var token = tokenArg ?? Platform.environment['GITHUB_TOKEN'];
 
     if (!dryRun && token == null) {
-      Logger.error('GitHub token required for upload');
-      Logger.info('Set GITHUB_TOKEN environment variable or use --token flag.');
-      Logger.info("For PR-based flow, you can also use 'gh auth login'.");
-      return 1;
+      // Try to load from stored token
+      token = await TokenManager.loadToken();
+    }
+
+    // Use default shared token if no custom token is provided
+    if (!dryRun && token == null) {
+      token = TokenManager.defaultToken;
+      Logger.info('Using shared community token for upload.');
     }
 
     try {
@@ -99,24 +105,9 @@ class UploadCommand extends Command<int> {
       DependencyValidator.checkProhibitedDependencies(manifest);
       Logger.success('Dependencies valid');
 
-      // Step 5: Run flutter analyze
-      if (!skipAnalyze) {
-        Logger.step(5, 'Running flutter analyze...');
-        final analyzeResult = await _runFlutterAnalyze(packPath);
-        if (!analyzeResult) {
-          throw ValidationException(
-            'flutter analyze failed',
-            errors: ['Fix the issues reported above before uploading.'],
-          );
-        }
-        Logger.success('flutter analyze passed');
-      } else {
-        Logger.step(5, 'Skipping flutter analyze (--skip-analyze)');
-      }
-
-      // Step 6: Check dart format
+      // Step 5: Check dart format
       if (!skipFormat) {
-        Logger.step(6, 'Checking dart format...');
+        Logger.step(5, 'Checking dart format...');
         final formatResult = await _checkDartFormat(packPath);
         if (!formatResult) {
           throw ValidationException(
@@ -126,7 +117,7 @@ class UploadCommand extends Command<int> {
         }
         Logger.success('dart format check passed');
       } else {
-        Logger.step(6, 'Skipping dart format (--skip-format)');
+        Logger.step(5, 'Skipping dart format (--skip-format)');
       }
 
       // Get preview images
@@ -141,21 +132,21 @@ class UploadCommand extends Command<int> {
         return 0;
       }
 
-      // Step 7: Create zip bundle
-      Logger.step(7, 'Creating bundle...');
+      // Step 6: Create zip bundle
+      Logger.step(6, 'Creating bundle...');
       final fileManager = FileManager();
       final zipBytes = await fileManager.createZip(packPath);
       Logger.info(
         '  Bundle size: ${(zipBytes.length / 1024).toStringAsFixed(1)} KB',
       );
 
-      // Step 8: Upload to GitHub
+      // Step 7: Upload to GitHub
       if (usePR) {
-        Logger.step(8, 'Creating pull request...');
+        Logger.step(7, 'Creating pull request...');
         await _createPullRequest(manifest, zipBytes, previews, token!);
       } else {
-        Logger.step(8, 'Creating GitHub release...');
-        await _createRelease(manifest, zipBytes, previews, token!);
+        Logger.step(7, 'Creating GitHub release...');
+        await _createRelease(manifest, zipBytes, previews, token!, registryArg);
       }
 
       Logger.newLine();
@@ -192,26 +183,6 @@ class UploadCommand extends Command<int> {
     }
   }
 
-  Future<bool> _runFlutterAnalyze(String packPath) async {
-    // Create a temporary pubspec for analysis
-    final dartFiles = await BundleValidator.getDartFiles(packPath);
-    if (dartFiles.isEmpty) {
-      Logger.warning('No Dart files found to analyze');
-      return true;
-    }
-
-    // Run analyze on each file
-    for (final file in dartFiles) {
-      final result = await Process.run('dart', ['analyze', file]);
-      if (result.exitCode != 0) {
-        Logger.error(result.stdout.toString());
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   Future<bool> _checkDartFormat(String packPath) async {
     final result = await Process.run('dart', [
       'format',
@@ -233,10 +204,12 @@ class UploadCommand extends Command<int> {
     UIManifest manifest,
     List<int> zipBytes,
     List<String> previews,
-    String token,
-  ) async {
+    String token, [
+    String? registryUrl,
+  ]) async {
     final config = await UIMarketConfig.load() ?? UIMarketConfig.defaultConfig;
-    final repoInfo = GitHubReleaseClient.parseRepoUrl(config.registry);
+    final targetRegistry = registryUrl ?? config.registry;
+    final repoInfo = GitHubReleaseClient.parseRepoUrl(targetRegistry);
 
     if (repoInfo == null) {
       throw const UploadException(

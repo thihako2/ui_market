@@ -11,7 +11,7 @@ class FileManager {
   final String projectPath;
 
   FileManager([String? projectPath])
-    : projectPath = projectPath ?? Directory.current.path;
+      : projectPath = projectPath ?? Directory.current.path;
 
   /// Get absolute path from relative.
   String absolutePath(String relativePath) {

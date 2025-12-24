@@ -166,9 +166,8 @@ class CodeValidator {
   /// Throw exception if validation fails.
   static Future<void> validateOrThrow(String packPath) async {
     final violations = await validatePack(packPath);
-    final errors = violations
-        .where((v) => v.severity == ViolationSeverity.error)
-        .toList();
+    final errors =
+        violations.where((v) => v.severity == ViolationSeverity.error).toList();
 
     if (errors.isNotEmpty) {
       throw ValidationException(
@@ -253,8 +252,7 @@ class _CodeValidatorVisitor extends RecursiveAstVisitor<void> {
           CodeViolation(
             file: fileName,
             line: node.offset,
-            message:
-                "External package import: '$uri'. "
+            message: "External package import: '$uri'. "
                 "Consider if this dependency is necessary.",
             severity: ViolationSeverity.warning,
           ),
@@ -277,8 +275,7 @@ class _CodeValidatorVisitor extends RecursiveAstVisitor<void> {
           CodeViolation(
             file: fileName,
             line: node.offset,
-            message:
-                "Class '${node.name.lexeme}' extends StatefulWidget. "
+            message: "Class '${node.name.lexeme}' extends StatefulWidget. "
                 "UI packs must use StatelessWidget only.",
             severity: ViolationSeverity.error,
           ),
@@ -291,8 +288,7 @@ class _CodeValidatorVisitor extends RecursiveAstVisitor<void> {
           CodeViolation(
             file: fileName,
             line: node.offset,
-            message:
-                "Class '${node.name.lexeme}' extends State. "
+            message: "Class '${node.name.lexeme}' extends State. "
                 "UI packs must not contain stateful logic.",
             severity: ViolationSeverity.error,
           ),
@@ -313,8 +309,7 @@ class _CodeValidatorVisitor extends RecursiveAstVisitor<void> {
         CodeViolation(
           file: fileName,
           line: node.offset,
-          message:
-              "setState() is not allowed in UI packs. "
+          message: "setState() is not allowed in UI packs. "
               "Use StatelessWidget and pass callbacks for state changes.",
           severity: ViolationSeverity.error,
         ),

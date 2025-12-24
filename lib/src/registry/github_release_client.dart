@@ -13,7 +13,7 @@ class GitHubReleaseClient {
   final http.Client _httpClient;
 
   GitHubReleaseClient({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+      : _httpClient = httpClient ?? http.Client();
 
   /// Download a pack bundle from the given URL.
   Future<List<int>> downloadBundle(String downloadUrl) async {
@@ -95,7 +95,13 @@ class GitHubReleaseClient {
     final pathParts = uri.pathSegments;
     if (pathParts.length < 2) return null;
 
-    return GitHubRepoInfo(owner: pathParts[0], repo: pathParts[1]);
+    // Strip .git suffix if present
+    var repoName = pathParts[1];
+    if (repoName.endsWith('.git')) {
+      repoName = repoName.substring(0, repoName.length - 4);
+    }
+
+    return GitHubRepoInfo(owner: pathParts[0], repo: repoName);
   }
 
   /// Get release information from GitHub API.

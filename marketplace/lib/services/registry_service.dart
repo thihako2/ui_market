@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import '../models/registry_pack.dart';
 
 class RegistryService {
+  /// Shared community registry URL
   static const String _defaultRegistry =
-      'https://raw.githubusercontent.com/your-org/flutter-ui-registry/main';
+      'https://raw.githubusercontent.com/thihasithuleon369kk-rgb/ui_registry/main';
 
   final String _baseUrl;
 

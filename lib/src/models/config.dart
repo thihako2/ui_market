@@ -66,7 +66,7 @@ class UIMarketConfig {
 
   /// Default configuration.
   static const UIMarketConfig defaultConfig = UIMarketConfig(
-    registry: 'https://github.com/your-org/flutter-ui-registry',
+    registry: 'https://github.com/thihasithuleon369kk-rgb/ui_registry.git',
   );
 
   /// Config file name.

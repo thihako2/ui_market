@@ -1,3 +1,5 @@
+import 'studio/visual_widget.dart';
+
 class RegistryPack {
   final String id;
   final String name;
@@ -6,6 +8,7 @@ class RegistryPack {
   final String author;
   final String? authorUrl;
   final String license;
+  final String? homepage;
   final List<String> tags;
   final int downloads;
   final String downloadUrl;
@@ -22,6 +25,7 @@ class RegistryPack {
     required this.author,
     this.authorUrl,
     required this.license,
+    this.homepage,
     required this.tags,
     required this.downloads,
     required this.downloadUrl,
@@ -40,6 +44,7 @@ class RegistryPack {
       author: json['author'] as String,
       authorUrl: json['authorUrl'] as String?,
       license: json['license'] as String,
+      homepage: json['homepage'] as String?,
       tags:
           (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
               [],
@@ -63,11 +68,13 @@ class ScreenInfo {
   final String name;
   final String route;
   final String file;
+  final List<VisualWidget> widgets;
 
   const ScreenInfo({
     required this.name,
     required this.route,
     required this.file,
+    required this.widgets,
   });
 
   factory ScreenInfo.fromJson(Map<String, dynamic> json) {
@@ -75,6 +82,10 @@ class ScreenInfo {
       name: json['name'] as String,
       route: json['route'] as String,
       file: json['file'] as String,
+      widgets: (json['widgets'] as List<dynamic>?)
+              ?.map((e) => VisualWidget.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }

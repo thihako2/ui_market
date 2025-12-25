@@ -5,7 +5,9 @@ import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 import 'package:http/http.dart' as http;
 
+import '../compiler/widget_compiler.dart';
 import '../core/exceptions.dart';
+import '../models/screen_info.dart';
 import '../core/file_manager.dart';
 import '../core/logger.dart';
 import '../core/token_manager.dart';
@@ -87,7 +89,7 @@ class UploadCommand extends Command<int> {
       // Step 1: Validate manifest
       Logger.step(1, 'Validating manifest...');
       final manifestPath = path.join(packPath, 'ui_manifest.json');
-      final manifest = await ManifestValidator.validate(manifestPath);
+      var manifest = await ManifestValidator.validate(manifestPath);
       Logger.success('Manifest valid: ${manifest.name} v${manifest.version}');
 
       // Step 2: Validate bundle structure
@@ -120,6 +122,12 @@ class UploadCommand extends Command<int> {
         Logger.step(5, 'Skipping dart format (--skip-format)');
       }
 
+      // Step 5.5: Compile Widgets (NEW)
+      Logger.step(5, 'Compiling widgets for preview...');
+      manifest = await _compileWidgets(packPath, manifest);
+      Logger.success(
+          'Compiled ${manifest.screens.fold(0, (p, s) => p + s.widgets.length)} widgets');
+
       // Get preview images
       final previews = await BundleValidator.getPreviewImages(packPath);
       Logger.info('  Found ${previews.length} preview image(s)');
@@ -132,39 +140,55 @@ class UploadCommand extends Command<int> {
         return 0;
       }
 
-      // Step 6: Create zip bundle
+      // Step 6: Create zip bundle (Using the updated manifest with widgets)
       Logger.step(6, 'Creating bundle...');
       final fileManager = FileManager();
-      final zipBytes = await fileManager.createZip(packPath);
-      Logger.info(
-        '  Bundle size: ${(zipBytes.length / 1024).toStringAsFixed(1)} KB',
-      );
 
-      // Step 7: Upload to GitHub
-      if (usePR) {
-        Logger.step(7, 'Creating pull request...');
-        await _createPullRequest(manifest, zipBytes, previews, token!);
-      } else {
-        Logger.step(7, 'Creating GitHub release...');
-        await _createRelease(manifest, zipBytes, previews, token!, registryArg);
-      }
+      // Temporarily overwrite ui_manifest.json with compiled widgets
+      final manifestFile = File(manifestPath);
+      final originalManifestContent = await manifestFile.readAsString();
 
-      Logger.newLine();
-      Logger.success(
-        'Successfully uploaded ${manifest.name} v${manifest.version}!',
-      );
-      Logger.newLine();
+      try {
+        final encoder = const JsonEncoder.withIndent('    ');
+        await manifestFile.writeAsString(encoder.convert(manifest.toJson()));
 
-      if (usePR) {
-        Logger.info('A pull request has been created.');
-        Logger.info('Once merged, your pack will appear in the marketplace.');
-      } else {
+        final zipBytes = await fileManager.createZip(packPath);
         Logger.info(
-          'Your pack should appear in the marketplace within 5 minutes.',
+          '  Bundle size: ${(zipBytes.length / 1024).toStringAsFixed(1)} KB',
         );
+
+        // Step 7: Upload to GitHub
+        if (usePR) {
+          Logger.step(7, 'Creating pull request...');
+          await _createPullRequest(manifest, zipBytes, previews, token!);
+        } else {
+          Logger.step(7, 'Creating GitHub release...');
+          await _createRelease(
+              manifest, zipBytes, previews, token!, registryArg);
+        }
+
+        Logger.newLine();
+        Logger.success(
+          'Successfully uploaded ${manifest.name} v${manifest.version}!',
+        );
+        Logger.newLine();
+
+        if (usePR) {
+          Logger.info('A pull request has been created.');
+          Logger.info('Once merged, your pack will appear in the marketplace.');
+        } else {
+          Logger.info(
+            'Your pack should appear in the marketplace within 5 minutes.',
+          );
+        }
+      } finally {
+        // Restore original manifest
+        await manifestFile.writeAsString(originalManifestContent);
       }
 
-      return 0;
+      return 0; // Return early as logic is now inside try/finally
+
+      /* Original code being replaced */
     } on ValidationException catch (e) {
       Logger.newLine();
       Logger.error(e.message);
@@ -181,6 +205,38 @@ class UploadCommand extends Command<int> {
       Logger.error('Upload failed: $e');
       return 1;
     }
+  }
+
+  Future<UIManifest> _compileWidgets(
+      String packPath, UIManifest manifest) async {
+    final updatedScreens = <ScreenInfo>[];
+
+    for (final screen in manifest.screens) {
+      final screenPath = path.join(packPath, screen.file);
+      try {
+        final widgets = await WidgetCompiler.compile(screenPath);
+        Logger.debug('  ${screen.name}: ${widgets.length} widgets');
+        updatedScreens.add(screen.copyWith(widgets: widgets));
+      } catch (e) {
+        Logger.warning('  Failed to compile widgets for ${screen.name}: $e');
+        updatedScreens.add(screen);
+      }
+    }
+
+    return UIManifest(
+      id: manifest.id,
+      name: manifest.name,
+      version: manifest.version,
+      description: manifest.description,
+      author: manifest.author,
+      authorUrl: manifest.authorUrl,
+      license: manifest.license,
+      flutter: manifest.flutter,
+      screens: updatedScreens,
+      dependencies: manifest.dependencies,
+      assets: manifest.assets,
+      tags: manifest.tags,
+    );
   }
 
   Future<bool> _checkDartFormat(String packPath) async {

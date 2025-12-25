@@ -4,6 +4,7 @@ import '../models/registry_pack.dart';
 import '../services/registry_service.dart';
 import '../widgets/pack_card.dart';
 import 'pack_detail_screen.dart';
+import 'studio/studio_home_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +27,24 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    RegistryService.packsNotifier.addListener(_onPacksChanged);
     _loadPacks();
+  }
+
+  void _onPacksChanged() {
+    if (mounted) {
+      setState(() {
+        _packs = RegistryService.packsNotifier.value;
+      });
+      _filterPacks();
+    }
+  }
+
+  @override
+  void dispose() {
+    RegistryService.packsNotifier.removeListener(_onPacksChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPacks() async {
@@ -112,13 +130,41 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Text(
                           'Beautiful UI packs for your Flutter apps',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: Colors.white70,
                           ),
                         ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const StudioHomeScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.edit),
+                              label: const Text('Creator Studio'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            IconButton(
+                              onPressed: _loadPacks,
+                              icon: const Icon(Icons.refresh,
+                                  color: Colors.white),
+                              tooltip: 'Refresh Registry',
+                            ),
+                          ],
+                        )
                       ],
                     ),
                   ),
@@ -241,6 +287,18 @@ class _HomeScreenState extends State<HomeScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const StudioHomeScreen()),
+          );
+        },
+        icon: const Icon(Icons.edit),
+        label: const Text('Creator Studio'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
     );
   }
 
@@ -269,11 +327,5 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => PackDetailScreen(pack: pack),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
